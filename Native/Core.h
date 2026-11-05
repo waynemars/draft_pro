@@ -19,6 +19,7 @@ FOUNDATION_EXPORT NSString *SYRedact(NSString *text);
 FOUNDATION_EXPORT NSURL * _Nullable SYEndpoint(NSDictionary *settings, NSError **error);
 FOUNDATION_EXPORT NSURL * _Nullable SYModelsEndpoint(NSDictionary *settings, NSError **error);
 FOUNDATION_EXPORT void SYListModels(NSDictionary *settings, NSString *key, SYCompletion completion);
+FOUNDATION_EXPORT NSDictionary * _Nullable SYDecodeCompletion(NSDictionary *object, NSString *style, NSError **error);
 FOUNDATION_EXPORT void SYComplete(NSDictionary *settings, NSString *key, NSArray<NSDictionary *> *messages, SYCompletion completion);
 FOUNDATION_EXPORT NSDictionary * _Nullable SYProposal(NSString *output, NSArray<NSDictionary *> *notes, NSError **error);
 FOUNDATION_EXPORT NSDictionary *SYLocalProposal(NSArray<NSDictionary *> *notes);

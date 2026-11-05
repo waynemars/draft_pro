@@ -23,6 +23,12 @@ Tests/editor-layout.sh
 
 前端测试需要 Node.js，运行应用本身不需要。GitHub Actions 会在 macOS 上构建、运行核心和前端测试，并提供应用 ZIP 下载。
 
+## 1.1.3 更新
+
+归档失败会区分无效 JSON、缺少字段、字段类型错误、输出被截断和模型拒绝。兼容带说明文字或代码围栏的单个 JSON，以及 Chat 数组文本块。读取三种协议的生成结束标志，避免把被截断的知识 / Skill 当作完整产物。
+
+AI 归档请求设置 8192 token 输出预算，并要求精简提炼。遇到归档格式错误或输出截断时自动修复重试一次（可能多产生一次模型调用费用），仍失败则显示具体原因；批次弹窗可直接重试。失败不会生成半成品或标记本批原稿已归档，已确认的产物保留。新增三种协议的格式恢复、截断恢复、连续失败及重试次数集成回归。
+
 ## 1.1.2 更新
 
 编辑区改用本地打包的 CodeMirror 5.65.20，移除透明输入框叠加高亮层的双重排版。光标按实际字符边界和字高绘制，覆盖中文、emoji、Tab、长命令滚动与自动换行。编辑字号调整为 13px、行高 22px。保留语法高亮、行号、查找替换、缩进和注释；每篇草稿独立保留本次会话的撤销历史与光标位置。编辑器无网络请求，许可见 THIRD_PARTY_NOTICES.md。
@@ -80,13 +86,13 @@ https://oneapi-comate.baidu-int.com/v1
 | OpenAI Responses | `/v1/responses` | `output[].content[type=output_text].text` |
 | Anthropic Messages | `/v1/messages` | `content[type=text].text` |
 
-均使用 `Authorization: Bearer <token>`。Anthropic 额外发送 `anthropic-version: 2023-06-01` 和 `max_tokens: 8192`。可选的用户名、代码库会编码到 `comate_custom_header`，`source` 始终留空。不会仿冒官方来源。Responses 显式传递 `store: false`；应用自身不记录 API 请求日志。
+均使用 `Authorization: Bearer <token>`。Anthropic 额外发送 `anthropic-version: 2023-06-01`。归档请求的输出预算为 8192 token：Chat / Anthropic 使用 `max_tokens`，Responses 使用 `max_output_tokens`；普通对话仅 Anthropic 设置 8192，其他协议使用服务默认值。可选的用户名、代码库会编码到 `comate_custom_header`，`source` 始终留空。不会仿冒官方来源。Responses 显式传递 `store: false`；应用自身不记录 API 请求日志。
 
 模型列表通过当前基础地址下的 `GET /models` 获取，按模型 ID 去重排序。首次填写密钥后自动加载，之后打开设置自动刷新；也可以点击「刷新模型」。列表为空、鉴权失败和服务未提供列表接口时显示原因，并保留上次保存的模型选择。
 
 使用自己有权限的模型。软件没有内置密钥，也不会读取 Codex、Sublime 或其他应用的凭证。文档说明个人 token 的模型调用产生费用，由对应业务承担。
 
-支持自定义 HTTPS 基础地址和本机 Ollama 的 `http://localhost:11434/v1`。当前为完整响应模式，等待模型完成后展示结果，不逐字流式输出。公司真实服务需要个人模型权限及相应内网 / VPN。三种协议通过本机模拟服务测试；OneAPI 模型列表及 Chat Completions 归档已通过真实服务验证。
+支持自定义 HTTPS 基础地址和本机 Ollama 的 `http://localhost:11434/v1`。当前为完整响应模式，等待模型完成后展示结果，不逐字流式输出。公司真实服务需要个人模型权限及相应内网 / VPN。三种协议及归档修复重试通过本机模拟服务测试；此前版本的 OneAPI 模型列表及 Chat Completions 归档已通过真实服务验证。1.1.3 未向真实公司模型发送用户草稿进行验证。
 
 ## 编辑体验
 

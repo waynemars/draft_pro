@@ -7,8 +7,8 @@ function node(id){if(!nodes.has(id))nodes.set(id,{value:'',checked:false,disable
 const requests=[];
 const context=vm.createContext({console,crypto:webcrypto,setTimeout,clearTimeout,requestAnimationFrame(){},URL,document:{getElementById:node,querySelector:node,querySelectorAll(){return[];},addEventListener(){}},window:{addEventListener(){}},mockRPC:(action,args)=>new Promise((resolve,reject)=>requests.push({action,args,resolve,reject}))});
 let source=readFileSync(__dirname+'/../Resources/app.js','utf8').replace(/boot\(\);\s*$/,'');
-vm.runInContext(source+'\nrpc=mockRPC;globalThis.testing={S,esc,markdown,flush,settingsModal,refreshModels,modelInputsChanged,closeModal,saveSettings,saveToken,openTokenPage,sublimeImportModal,scanSublime,filteredSublimeItems,confirmSublimeImport};',context);
-const {S,esc,markdown,flush,settingsModal,refreshModels,modelInputsChanged,closeModal,saveSettings,saveToken,openTokenPage,sublimeImportModal,scanSublime,filteredSublimeItems,confirmSublimeImport}=context.testing;
+vm.runInContext(source+'\nrpc=mockRPC;globalThis.testing={S,esc,markdown,flush,settingsModal,refreshModels,modelInputsChanged,closeModal,saveSettings,saveToken,openTokenPage,sublimeImportModal,scanSublime,filteredSublimeItems,confirmSublimeImport,extractBatch,batchArchiveModal};',context);
+const {S,esc,markdown,flush,settingsModal,refreshModels,modelInputsChanged,closeModal,saveSettings,saveToken,openTokenPage,sublimeImportModal,scanSublime,filteredSublimeItems,confirmSublimeImport,extractBatch,batchArchiveModal}=context.testing;
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
 async function run(){
   assert.equal(esc('<script>"&'), '&lt;script&gt;&quot;&amp;');
@@ -101,6 +101,27 @@ async function run(){
   const delayed=scanSublime('session');closeModal();requests.at(-1).resolve({items:[]});await delayed;
   assert.equal(S.modalType,null,'关闭导入预览后忽略迟到响应');
   console.log('PASS Sublime 导入预览、去重选择、筛选、注入隔离与失败重试');
+
+  const plan={token:'batch-test',index:0,sourceCount:1,batches:[{count:1,characters:30,titles:['排查草稿']}]};
+  S.batchPlan=plan;S.proposal=null;
+  for(const local of [false,true]){
+    const failedBatch=extractBatch(local);
+    assert.equal(requests.at(-1).action,'extractBatch');
+    assert.equal(requests.at(-1).args.local,local);
+    requests.at(-1).reject(Error('模型返回的归档正文不是有效 JSON <script>'));
+    await failedBatch;
+    assert(node('modal-root').innerHTML.includes('有效 JSON &lt;script&gt;'),'模型失败原因应转义显示');
+    assert(node('modal-root').innerHTML.includes(`data-action="${local?'batchLocal':'batchAI'}">重试本批`));
+    assert.equal(S.batchPlan,plan,'失败保留同一归档计划供重试');
+    assert.equal(plan.index,0,'失败不得推进归档批次');
+    assert.equal(S.proposal,null,'失败不得产生可确认的半成品');
+    batchArchiveModal();assert.equal(S.modalType,'batch','失败后可返回当前批次');
+  }
+  const dismissedBatch=extractBatch(false);closeModal();
+  requests.at(-1).resolve({token:'stale-result',proposal:{}});await dismissedBatch;
+  assert.equal(S.proposal,null,'关闭弹窗后忽略迟到的提炼响应');
+  assert.equal(S.modalType,null);
+  console.log('PASS 分批归档失败显示具体原因、保留原计划、按原方式重试并忽略关闭后的响应');
 
 }
 run().catch(error=>{console.error(error);process.exitCode=1;});

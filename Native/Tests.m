@@ -29,6 +29,27 @@ int SYRunTests(void) {
         for(NSString *style in @[@"chat",@"responses",@"anthropic"]){NSMutableDictionary *catalog=[SYDefaultSettings()mutableCopy];catalog[@"apiStyle"]=style;catalog[@"baseURL"]=@"https://api.example.com/gateway/v1/messages/";Check([SYModelsEndpoint(catalog,&error).absoluteString isEqual:@"https://api.example.com/gateway/v1/models"],[@"模型列表地址与协议无关："stringByAppendingString:style]);}
         settings[@"baseURL"]=@"https://api.example.com/v1/models";Check([SYModelsEndpoint(settings,&error).absoluteString isEqual:@"https://api.example.com/v1/models"],@"模型列表完整地址不重复追加");
         NSString *output=@"```json\n{\"title\":\"排查流程\",\"summary\":\"基于原稿\",\"tags\":[\"运维\"],\"knowledge\":\"# 知识\",\"skill\":\"# 步骤\"}\n```";NSDictionary *parsed=SYProposal(output,@[note],&error);Check([parsed[@"skill"]hasPrefix:@"---\nname:"]&&[parsed[@"sourceIDs"]isEqual:@[note[@"id"]]],@"AI JSON 与 Skill 元数据规范化");error=nil;Check(SYProposal(@"{\"title\":\"缺失内容\"}",@[note],&error)==nil&&error!=nil,@"拒绝不完整的模型输出");error=nil;
+        NSDictionary *validArchive=@{@"title":@"格式回归",@"summary":@"依据原稿",@"knowledge":@"```sh\ngrep 'errno\\[1\\]' ./log\n```\nJSON 示例：{\"key\":\"value\"}",@"skill":@"# 验证流程",@"tags":@[@"格式"]};
+        NSString *validJSON=SYJSON(validArchive);error=nil;
+        NSDictionary *withProse=SYProposal([NSString stringWithFormat:@"说明 {invalid}：\n```json\n%@\n```\n状态：{\"ok\":true}",validJSON],@[note],&error);
+        Check([withProse[@"knowledge"]isEqual:validArchive[@"knowledge"]]&&!error,@"带前后说明、围栏、代码括号和转义的归档 JSON 可正确解析");
+        error=nil;Check(!SYProposal([validJSON stringByAppendingFormat:@"\n%@",validJSON],@[note],&error)&&[error.localizedDescription containsString:@"多个归档对象"],@"拒绝含糊的多个归档对象，不丢弃其中内容");
+        NSMutableDictionary *missingField=[validArchive mutableCopy];[missingField removeObjectForKey:@"skill"];error=nil;
+        Check(!SYProposal(SYJSON(missingField),@[note],&error)&&[error.localizedDescription containsString:@"skill"],@"缺失字段错误指出具体字段");
+        NSMutableDictionary *wrongType=[validArchive mutableCopy];wrongType[@"knowledge"]=@{@"content":@"嵌套正文"};error=nil;
+        Check(!SYProposal(SYJSON(wrongType),@[note],&error)&&[error.localizedDescription containsString:@"knowledge"]&&[error.localizedDescription containsString:@"必须是文本"],@"对象和数组类型错误不会冒充合法 Markdown");
+        error=nil;Check(!SYProposal(@"{\"title\":\"bad\",\"knowledge\":\"grep \\q\"}",@[note],&error)&&[error.localizedDescription containsString:@"有效 JSON"],@"非法命令转义被识别为 JSON 格式错误");
+        error=nil;Check(!SYProposal(validJSON,@[],&error)&&error,@"没有来源时不能接受归档结果");
+        error=nil;NSDictionary *chatBlocks=SYDecodeCompletion(@{@"choices":@[@{@"finish_reason":@"stop",@"message":@{@"content":@[@{@"type":@"text",@"text":@"完整正文"}]}}]},@"chat",&error);
+        Check([chatBlocks[@"text"]isEqual:@"完整正文"]&&![chatBlocks[@"truncated"]boolValue],@"Chat 支持数组形式的文本块");
+        NSDictionary *chatCut=SYDecodeCompletion(@{@"choices":@[@{@"finish_reason":@"length",@"message":@{@"content":@"半截正文"}}]},@"chat",&error);
+        Check([chatCut[@"truncated"]boolValue],@"Chat length 识别为输出截断");
+        NSDictionary *anthropicCut=SYDecodeCompletion(@{@"stop_reason":@"max_tokens",@"content":@[@{@"type":@"text",@"text":@"半截正文"}]},@"anthropic",&error);
+        Check([anthropicCut[@"truncated"]boolValue],@"Anthropic max_tokens 识别为输出截断");
+        NSDictionary *responsesCut=SYDecodeCompletion(@{@"status":@"incomplete",@"incomplete_details":@{@"reason":@"max_output_tokens"},@"output":@[]},@"responses",&error);
+        Check([responsesCut[@"truncated"]boolValue],@"Responses 即使没有正文也可识别输出限额");
+        error=nil;Check(!SYDecodeCompletion(@{@"choices":@[@{@"finish_reason":@"stop",@"message":@{@"refusal":@"拒绝",@"content":@""}}]},@"chat",&error)&&[error.localizedDescription containsString:@"拒绝处理"],@"模型拒绝不进入格式修复重试");
+        error=nil;
         NSMutableDictionary *broken=[note mutableCopy];broken[@"kind"]=@"invalid";Check([store save:broken touch:YES forceRevision:NO error:&error]==nil,@"拒绝无效笔记类型");
         NSString *commandSecrets=SYRedact(@"mysql56 -h127.0.0.1 -P3306 -utest -pfixture-db-secret -Dtest\nOFFLINE_PWD=fixture-env-secret ./script\ncurl 'https://example.com?tb_sig=fixture-signature' -d 'robot_sign=fixture-robot'");for(NSString *secret in @[@"fixture-db-secret",@"fixture-env-secret",@"fixture-signature",@"fixture-robot"])Check(![commandSecrets containsString:secret],[@"导入命令凭证隐藏："stringByAppendingString:secret]);
         Check([commandSecrets containsString:@"-P3306"],@"隐藏 MySQL 密码时保留大写 -P 端口参数");
@@ -49,8 +70,38 @@ int SYRunTests(void) {
     [NSFileManager.defaultManager removeItemAtURL:directory error:nil];return 0;
 }
 
+static void VerifyAPICounts(NSString *base) {
+    NSURLComponents *parts=[NSURLComponents componentsWithString:base];parts.path=@"/fixture/counts";
+    [[NSURLSession.sharedSession dataTaskWithURL:parts.URL completionHandler:^(NSData *data,NSURLResponse *response,NSError *error){
+        id counts=data?[NSJSONSerialization JSONObjectWithData:data options:0 error:nil]:nil;
+        if(error||![counts isKindOfClass:NSDictionary.class]){fprintf(stderr,"FAIL 读取模拟服务调用次数\n");exit(1);}
+        NSDictionary *expected=@{@"test-model":@2,@"error-model":@1,@"archive-format-once":@2,@"archive-shape-once":@2,@"archive-cut-once":@2,@"archive-format-always":@2,@"archive-cut-always":@2,@"archive-refusal":@1,@"archive-http":@1};
+        for(NSString *path in @[@"/v1/chat/completions",@"/v1/responses",@"/v1/messages"])for(NSString *model in expected){
+            NSString *key=[path stringByAppendingFormat:@":%@",model];
+            if(![counts[key]isEqual:expected[model]]){fprintf(stderr,"FAIL %s 调用次数不匹配\n",key.UTF8String);exit(1);}
+        }
+        printf("PASS 三种协议：成功只调用一次；格式或截断最多重试一次；拒绝与 HTTP 错误不重试\n\nOneAPI 模型列表、三种协议、检索引用、凭证隐藏和归档恢复测试通过（本机模拟服务）。\n");exit(0);
+    }]resume];
+}
+
+static void ArchiveRecoveryStep(NSString *base,NSUInteger index) {
+    NSArray *styles=@[@"chat",@"responses",@"anthropic"],*models=@[@"archive-format-once",@"archive-shape-once",@"archive-cut-once",@"archive-format-always",@"archive-cut-always",@"archive-refusal",@"archive-http"];
+    if(index>=styles.count*models.count){VerifyAPICounts(base);return;}
+    NSUInteger scenario=index%models.count;NSString *style=styles[index/models.count];
+    NSMutableDictionary *settings=[SYDefaultSettings()mutableCopy];settings[@"baseURL"]=base;settings[@"model"]=models[scenario];settings[@"apiStyle"]=style;
+    NSDictionary *note=SYNote(@"归档异常回归",@"pdo2 -M 日志排查\ncurl -H 'Authorization: Bearer sensitive-test-secret' https://example.com",@"draft");
+    SYExtract(@[note],settings,@"fixture-key",^(id proposal,NSError *error){
+        BOOL valid=NO;
+        if(scenario<3)valid=!error&&[proposal[@"title"]isEqual:@"联调知识"]&&[proposal[@"generationAttempts"]integerValue]==2;
+        else if(scenario<5)valid=!proposal&&[error.localizedDescription containsString:scenario==3?@"有效 JSON":@"长度上限"]&&[error.localizedDescription containsString:@"已自动修复重试 1 次"];
+        else valid=!proposal&&[error.localizedDescription containsString:scenario==5?@"拒绝处理":@"HTTP 401"];
+        if(!valid){fprintf(stderr,"FAIL %s %s：%s\n",style.UTF8String,[models[scenario]UTF8String],(error.localizedDescription?:@"返回结果不匹配").UTF8String);exit(1);}
+        printf("PASS %s %s\n",style.UTF8String,[models[scenario]UTF8String]);ArchiveRecoveryStep(base,index+1);
+    });
+}
+
 static void IntegrationStep(NSString *base,NSUInteger index) {
-    NSArray *styles=@[@"chat",@"responses",@"anthropic"];if(index>=styles.count){printf("\nOneAPI 模型列表、三种协议、检索引用、凭证隐藏、错误处理测试通过（本机模拟服务）。\n");exit(0);}
+    NSArray *styles=@[@"chat",@"responses",@"anthropic"];if(index>=styles.count){ArchiveRecoveryStep(base,0);return;}
     NSMutableDictionary *settings=[SYDefaultSettings()mutableCopy];settings[@"baseURL"]=base;settings[@"model"]=@"test-model";settings[@"apiStyle"]=styles[index];
     NSDictionary *note=SYNote(@"内部模型联调",@"curl -H 'Authorization: Bearer sensitive-test-secret' https://example.com\npdo2 -M 日志排查",@"draft");
     SYExtract(@[note],settings,@"fixture-key",^(id proposal,NSError *error){if(error||![proposal[@"title"]isEqual:@"联调知识"]){fprintf(stderr,"FAIL %s\n",(error.localizedDescription?:@"模型结果不匹配").UTF8String);exit(1);}printf("PASS %s 归档、脱敏和结果解析\n",[styles[index]UTF8String]);
