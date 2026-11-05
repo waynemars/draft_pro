@@ -1,0 +1,27 @@
+name: macOS build and tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build application
+        run: ./build.sh "$RUNNER_TEMP/shiye-release"
+      - name: Test core and Sublime import
+        run: '"$RUNNER_TEMP/shiye-release/拾页.app/Contents/MacOS/Shiye" --self-test'
+      - name: Test editor and settings
+        run: node Tests/frontend.test.cjs
+      - name: Package application
+        run: ditto -c -k --norsrc --keepParent "$RUNNER_TEMP/shiye-release/拾页.app" "$RUNNER_TEMP/Shiye-macos.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: draft-pro-macos-${{ runner.arch }}
+          path: ${{ runner.temp }}/Shiye-macos.zip

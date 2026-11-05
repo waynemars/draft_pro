@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'">
+  <title>拾页 · AI 草稿本</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <aside class="sidebar">
+      <div class="window-space"></div>
+      <div class="brand"><span class="brand-mark">拾</span><div><strong>拾页</strong><span>A LITTLE SPACE FOR BIG IDEAS</span></div></div>
+      <button class="search-launch" data-action="search"><span data-icon="search"></span><span>搜索你的所有内容</span><kbd>⌘ ⇧ F</kbd></button>
+      <nav id="navigation"></nav>
+      <div class="files-heading"><span id="files-label">草稿 / OPEN FILES</span><div><button class="icon-button" title="多选聚合归档" aria-label="多选聚合归档" data-action="bulk" data-icon="layers"></button><button class="icon-button" title="新建草稿 ⌘N" aria-label="新建草稿" data-action="new" data-icon="plus"></button></div></div>
+      <div class="sublime-entry"><button class="quiet" data-action="importSublime"><span data-icon="download"></span>导入 Sublime</button><button id="resume-batch" class="icon-button" data-action="resumeBatch" hidden title="继续分批归档" aria-label="继续分批归档" data-icon="layers"></button></div><div id="file-list" class="file-list"></div>
+      <div id="bulk-bar" hidden><span id="selection-count"></span><button class="primary small" data-action="archiveSelection">聚合归档 <span data-icon="sparkles"></span></button></div>
+      <div class="sidebar-bottom"><div class="workspace"><span class="local-dot"></span><div><strong>本地工作空间</strong><small id="workspace-caption">每一页，自动保存</small></div><button class="icon-button" title="模型与设置" aria-label="模型与设置" data-action="settings" data-icon="settings"></button></div></div>
+    </aside>
+    <main>
+      <header class="topbar"><div class="breadcrumb"><span data-icon="notebook"></span><span id="section-name">草稿本</span><span class="slash">/</span><span id="top-title">新的想法，从这里开始</span></div><div class="top-actions"><button class="quiet" data-action="open" title="打开文本 ⌘O"><span data-icon="folder"></span>打开</button><button class="quiet" data-action="saveFile" title="保存文本 ⌘S"><span data-icon="save"></span>保存文本</button><span class="toolbar-divider"></span><button class="primary" data-action="archive"><span data-icon="sparkles"></span>AI 归档<kbd>⇧⌘K</kbd></button></div></header>
+      <div id="tabs" class="tabs"></div>
+      <section id="editor-panel" class="editor-panel" hidden>
+        <div class="document-heading"><div class="eyebrow" id="doc-eyebrow">随手记下，让知识留下</div><div class="title-row"><input id="note-title" aria-label="草稿标题" placeholder="未命名草稿" spellcheck="false"><button class="icon-button" id="pin-button" data-action="pin" title="置顶" aria-label="置顶" data-icon="pin"></button><button class="icon-button" data-action="more" title="更多操作" aria-label="更多操作" data-icon="more"></button></div><div class="doc-meta"><div id="tags"></div><button class="tag-add" data-action="tags">＋ 标签</button><span id="document-date"></span><button class="quiet preview-button" id="preview-toggle" data-action="preview"><span data-icon="eye"></span>预览</button></div><div id="source-links"></div></div>
+        <div id="find-bar" class="find-bar" hidden><input id="find-input" placeholder="查找文本" aria-label="查找文本"><span id="find-count"></span><button class="icon-button" data-action="findPrevious" aria-label="上一个" data-icon="up"></button><button class="icon-button" data-action="findNext" aria-label="下一个" data-icon="down"></button><input id="replace-input" placeholder="替换为" aria-label="替换为"><button class="quiet" data-action="replace">替换</button><button class="quiet" data-action="replaceAll">全部</button><button class="icon-button" data-action="closeFind" aria-label="关闭查找" data-icon="x"></button></div>
+        <div class="editor-body" id="editor-body"><div class="line-numbers" id="line-numbers" aria-hidden="true"></div><div class="code-surface"><pre id="highlight" aria-hidden="true"></pre><textarea id="editor" aria-label="草稿正文" spellcheck="false" autocorrect="off" autocapitalize="off" wrap="off"></textarea></div></div>
+        <article id="markdown-preview" class="markdown" hidden></article>
+        <footer class="statusbar"><div><span class="local-dot" id="save-dot"></span><span id="save-status">已保存到本机</span><span id="file-path"></span></div><div><span id="cursor-position">行 1，列 1</span><span id="char-count">0 字符</span><button class="status-button" data-action="wrap" id="wrap-status">不换行</button><select id="language" aria-label="语法模式"><option value="text">Plain Text</option><option value="shell">Shell / curl / pdo2</option><option value="sql">SQL</option><option value="json">JSON</option><option value="markdown">Markdown</option><option value="python">Python</option><option value="javascript">JavaScript</option></select><span>UTF-8</span></div></footer>
+      </section>
+      <section id="empty-panel" class="empty-panel"><div class="welcome-art"><span data-icon="notebook"></span><i></i><b>✦</b></div><div class="eyebrow">CAPTURE NOW. CONNECT LATER.</div><h1>先记下来，<br><em>让想法有迹可循。</em></h1><p>命令、代码、一闪而过的灵感。<br>随手开一页，再把零散草稿变成你的知识。</p><div class="welcome-actions"><button class="primary" data-action="new"><span data-icon="plus"></span>新建一页<kbd>⌘ N</kbd></button><button class="quiet" data-action="open">打开文本 <span data-icon="arrowRight"></span></button></div><div class="welcome-features"><span><span data-icon="lock"></span>本机保存</span><span><span data-icon="layers"></span>多篇聚合</span><span><span data-icon="sparkles"></span>知识与 Skill</span></div><button class="text-button" data-action="sample">试试一篇示例草稿 →</button></section>
+      <section id="search-panel" class="search-panel" hidden></section>
+      <section id="chat-panel" class="chat-panel" hidden></section>
+    </main>
+  </div>
+  <div id="modal-root"></div>
+  <div id="toast" role="status" hidden></div>
+  <script src="app.js"></script>
+</body>
+</html>
