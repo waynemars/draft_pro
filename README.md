@@ -18,9 +18,14 @@ open dist/拾页.app
 ```bash
 dist/拾页.app/Contents/MacOS/Shiye --self-test
 node Tests/frontend.test.cjs
+Tests/editor-layout.sh
 ```
 
 前端测试需要 Node.js，运行应用本身不需要。GitHub Actions 会在 macOS 上构建、运行核心和前端测试，并提供应用 ZIP 下载。
+
+## 1.1.1 更新
+
+修复长命令出现横向滚动条后，光标与语法高亮文字错位的问题。输入框作为唯一滚动来源，高亮和行号同步平移，避免不同可视高度造成偏移。自动换行使用实际排版高度显示行号；Markdown 标题高亮保持与输入框相同字宽。新增真实 WebKit 排版回归，覆盖双向滚动、缩窄窗口、中文、emoji、Tab 和插入位置。
 
 ## 1.1.0 更新
 
@@ -135,6 +140,7 @@ Tests/                  前端回归与本机模型服务夹具
 ```bash
 ../拾页.app/Contents/MacOS/Shiye --self-test
 node Tests/frontend.test.cjs
+Tests/editor-layout.sh
 ```
 
 API 集成测试（两个终端）：

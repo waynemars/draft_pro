@@ -19,6 +19,8 @@ jobs:
         run: '"$RUNNER_TEMP/shiye-release/拾页.app/Contents/MacOS/Shiye" --self-test'
       - name: Test editor and settings
         run: node Tests/frontend.test.cjs
+      - name: Test WebKit cursor and text layout
+        run: Tests/editor-layout.sh
       - name: Package application
         run: ditto -c -k --norsrc --keepParent "$RUNNER_TEMP/shiye-release/拾页.app" "$RUNNER_TEMP/Shiye-macos.zip"
       - uses: actions/upload-artifact@v4

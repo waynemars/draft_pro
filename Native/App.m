@@ -43,7 +43,7 @@
 - (void)command:(NSString *)name { [self.web evaluateJavaScript:[NSString stringWithFormat:@"window.appCommand(%@)",[SYJSON(@[name])substringWithRange:NSMakeRange(1,SYJSON(@[name]).length-2)]]completionHandler:nil]; }
 #define SY_COMMAND(method,name) - (void)method:(id)sender { [self command:@name]; }
 SY_COMMAND(importSublime,"importSublime") SY_COMMAND(newNote,"new") SY_COMMAND(settings,"settings") SY_COMMAND(openFiles,"open") SY_COMMAND(saveFile,"saveFile") SY_COMMAND(saveAs,"saveAs") SY_COMMAND(closeTab,"closeTab") SY_COMMAND(quickOpen,"quickOpen") SY_COMMAND(search,"search") SY_COMMAND(find,"find") SY_COMMAND(chat,"chat") SY_COMMAND(archive,"archive") SY_COMMAND(wrap,"wrap") SY_COMMAND(backup,"backup") SY_COMMAND(restore,"restore") SY_COMMAND(help,"help")
-- (void)about:(id)sender { [NSApp orderFrontStandardAboutPanelWithOptions:@{NSAboutPanelOptionApplicationName:@"拾页 Shiye",NSAboutPanelOptionApplicationVersion:@"1.1.0",NSAboutPanelOptionCredits:[[NSAttributedString alloc]initWithString:@"随手记下，让知识留下。\n本地优先的 AI 草稿本"]}]; }
+- (void)about:(id)sender { [NSApp orderFrontStandardAboutPanelWithOptions:@{NSAboutPanelOptionApplicationName:@"拾页 Shiye",NSAboutPanelOptionApplicationVersion:@"1.1.1",NSAboutPanelOptionCredits:[[NSAttributedString alloc]initWithString:@"随手记下，让知识留下。\n本地优先的 AI 草稿本"]}]; }
 - (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)sender { return YES; }
 - (BOOL)windowShouldClose:(NSWindow *)sender { [NSApp terminate:nil];return NO; }
 - (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender {
