@@ -3,12 +3,12 @@ const vm=require('node:vm');
 const assert=require('node:assert/strict');
 const {webcrypto}=require('node:crypto');
 const nodes=new Map();
-function node(id){if(!nodes.has(id))nodes.set(id,{value:'',checked:false,disabled:false,hidden:false,selectionStart:0,selectionEnd:0,scrollTop:0,scrollLeft:0,innerHTML:'',textContent:'',className:'',dataset:{},classList:{toggle(){},add(){},remove(){}},addEventListener(){},querySelectorAll(){return[];},focus(){},setSelectionRange(){},scrollIntoView(){},remove(){}});return nodes.get(id);}
+function node(id){if(!nodes.has(id))nodes.set(id,{value:'',checked:false,disabled:false,hidden:false,selectionStart:0,selectionEnd:0,scrollTop:0,scrollLeft:0,innerHTML:'',textContent:'',className:'',dataset:{},classList:{toggle(){},add(){},remove(){}},addEventListener(){},querySelectorAll(){return[];},focus(){},setSelectionRange(){},setAttribute(){},scrollIntoView(){},remove(){}});return nodes.get(id);}
 const requests=[];
 const context=vm.createContext({console,crypto:webcrypto,setTimeout,clearTimeout,requestAnimationFrame(){},URL,document:{getElementById:node,querySelector:node,querySelectorAll(){return[];},addEventListener(){}},window:{addEventListener(){}},mockRPC:(action,args)=>new Promise((resolve,reject)=>requests.push({action,args,resolve,reject}))});
 let source=readFileSync(__dirname+'/../Resources/app.js','utf8').replace(/boot\(\);\s*$/,'');
-vm.runInContext(source+'\nrpc=mockRPC;globalThis.testing={S,esc,markdown,flush,settingsModal,refreshModels,modelInputsChanged,closeModal,saveSettings,saveToken,openTokenPage,sublimeImportModal,scanSublime,filteredSublimeItems,confirmSublimeImport,extractBatch,batchArchiveModal};',context);
-const {S,esc,markdown,flush,settingsModal,refreshModels,modelInputsChanged,closeModal,saveSettings,saveToken,openTokenPage,sublimeImportModal,scanSublime,filteredSublimeItems,confirmSublimeImport,extractBatch,batchArchiveModal}=context.testing;
+vm.runInContext(source+'\nrpc=mockRPC;globalThis.testing={S,esc,markdown,flush,settingsModal,refreshModels,modelInputsChanged,closeModal,saveSettings,saveToken,openTokenPage,sublimeImportModal,scanSublime,filteredSublimeItems,confirmSublimeImport,extractBatch,batchArchiveModal,renderFiles,actions};',context);
+const {S,esc,markdown,flush,settingsModal,refreshModels,modelInputsChanged,closeModal,saveSettings,saveToken,openTokenPage,sublimeImportModal,scanSublime,filteredSublimeItems,confirmSublimeImport,extractBatch,batchArchiveModal,renderFiles,actions}=context.testing;
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
 async function run(){
   assert.equal(esc('<script>"&'), '&lt;script&gt;&quot;&amp;');
@@ -122,6 +122,16 @@ async function run(){
   assert.equal(S.proposal,null,'关闭弹窗后忽略迟到的提炼响应');
   assert.equal(S.modalType,null);
   console.log('PASS 分批归档失败显示具体原因、保留原计划、按原方式重试并忽略关闭后的响应');
+
+  S.section='draft';S.bulk=true;S.selected.clear();renderFiles();
+  assert.equal(node('bulk-select-all').textContent,'全选');
+  actions.selectAll();
+  assert.equal(S.selected.size,S.notes.filter(n=>n.kind==='draft'&&!n.archived&&!n.trashed).length);
+  assert.equal(node('bulk-select-all').textContent,'取消全选');
+  actions.selectAll();
+  assert.equal(S.selected.size,0);
+  assert.equal(node('bulk-select-all').textContent,'全选');
+  console.log('PASS 聚合归档支持一键全选和取消全选当前列表');
 
 }
 run().catch(error=>{console.error(error);process.exitCode=1;});
