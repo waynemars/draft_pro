@@ -23,6 +23,10 @@ Tests/editor-layout.sh
 
 前端测试需要 Node.js，运行应用本身不需要。GitHub Actions 会在 macOS 上构建、运行核心和前端测试，并提供应用 ZIP 下载。
 
+## 1.1.2 更新
+
+编辑区改用本地打包的 CodeMirror 5.65.20，移除透明输入框叠加高亮层的双重排版。光标按实际字符边界和字高绘制，覆盖中文、emoji、Tab、长命令滚动与自动换行。编辑字号调整为 13px、行高 22px。保留语法高亮、行号、查找替换、缩进和注释；每篇草稿独立保留本次会话的撤销历史与光标位置。编辑器无网络请求，许可见 THIRD_PARTY_NOTICES.md。
+
 ## 1.1.1 更新
 
 修复长命令出现横向滚动条后，光标与语法高亮文字错位的问题。输入框作为唯一滚动来源，高亮和行号同步平移，避免不同可视高度造成偏移。自动换行使用实际排版高度显示行号；Markdown 标题高亮保持与输入框相同字宽。新增真实 WebKit 排版回归，覆盖双向滚动、缩窄窗口、中文、emoji、Tab 和插入位置。
@@ -87,7 +91,7 @@ https://oneapi-comate.baidu-int.com/v1
 ## 编辑体验
 
 - 多标签和左侧草稿列表，重启恢复打开状态、光标与滚动位置。
-- 行号、简单语法着色、自动缩进、Tab / Shift-Tab、`⌘/` 行注释。
+- 行号、语法着色、自动缩进、Tab / Shift-Tab、`⌘/` 行注释。
 - `⌘F` 查找替换、`⌘P` 快速切换、自动换行开关。
 - Markdown 安全预览、标签、置顶、复制、文本 / Skill 导出。
 - 定期历史快照，最多 50 份；从历史恢复时额外保存当前版本。
@@ -108,7 +112,7 @@ https://oneapi-comate.baidu-int.com/v1
 
 ## 源码与构建
 
-Objective-C / AppKit 管理窗口、系统菜单、文件操作、钥匙串、SQLite 和模型请求；系统 WKWebView 渲染本地 HTML/CSS/JavaScript 编辑界面。无第三方运行时依赖。
+Objective-C / AppKit 管理窗口、系统菜单、文件操作、钥匙串、SQLite 和模型请求；系统 WKWebView 渲染本地 HTML/CSS/JavaScript 编辑界面。原生功能无第三方运行时依赖；编辑界面内置 MIT 许可的 CodeMirror（无需安装 Node 或联网加载）。
 
 安装 Apple Command Line Tools 后运行：
 

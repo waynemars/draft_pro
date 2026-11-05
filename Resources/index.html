@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'">
   <title>拾页 · AI 草稿本</title>
+  <link rel="stylesheet" href="editor-vendor.css">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -25,7 +26,7 @@
       <section id="editor-panel" class="editor-panel" hidden>
         <div class="document-heading"><div class="eyebrow" id="doc-eyebrow">随手记下，让知识留下</div><div class="title-row"><input id="note-title" aria-label="草稿标题" placeholder="未命名草稿" spellcheck="false"><button class="icon-button" id="pin-button" data-action="pin" title="置顶" aria-label="置顶" data-icon="pin"></button><button class="icon-button" data-action="more" title="更多操作" aria-label="更多操作" data-icon="more"></button></div><div class="doc-meta"><div id="tags"></div><button class="tag-add" data-action="tags">＋ 标签</button><span id="document-date"></span><button class="quiet preview-button" id="preview-toggle" data-action="preview"><span data-icon="eye"></span>预览</button></div><div id="source-links"></div></div>
         <div id="find-bar" class="find-bar" hidden><input id="find-input" placeholder="查找文本" aria-label="查找文本"><span id="find-count"></span><button class="icon-button" data-action="findPrevious" aria-label="上一个" data-icon="up"></button><button class="icon-button" data-action="findNext" aria-label="下一个" data-icon="down"></button><input id="replace-input" placeholder="替换为" aria-label="替换为"><button class="quiet" data-action="replace">替换</button><button class="quiet" data-action="replaceAll">全部</button><button class="icon-button" data-action="closeFind" aria-label="关闭查找" data-icon="x"></button></div>
-        <div class="editor-body" id="editor-body"><div class="line-numbers" id="line-numbers" aria-hidden="true"><div id="line-number-content"></div></div><div class="code-surface"><div class="highlight-viewport" id="highlight-viewport" aria-hidden="true"><pre id="highlight"></pre></div><textarea id="editor" aria-label="草稿正文" spellcheck="false" autocorrect="off" autocapitalize="off" wrap="off"></textarea></div></div>
+        <div class="editor-body" id="editor-body"><div id="editor-host"></div></div>
         <article id="markdown-preview" class="markdown" hidden></article>
         <footer class="statusbar"><div><span class="local-dot" id="save-dot"></span><span id="save-status">已保存到本机</span><span id="file-path"></span></div><div><span id="cursor-position">行 1，列 1</span><span id="char-count">0 字符</span><button class="status-button" data-action="wrap" id="wrap-status">不换行</button><select id="language" aria-label="语法模式"><option value="text">Plain Text</option><option value="shell">Shell / curl / pdo2</option><option value="sql">SQL</option><option value="json">JSON</option><option value="markdown">Markdown</option><option value="python">Python</option><option value="javascript">JavaScript</option></select><span>UTF-8</span></div></footer>
       </section>
@@ -36,6 +37,7 @@
   </div>
   <div id="modal-root"></div>
   <div id="toast" role="status" hidden></div>
+  <script src="editor-vendor.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
